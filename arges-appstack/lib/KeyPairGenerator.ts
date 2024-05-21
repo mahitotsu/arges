@@ -10,24 +10,23 @@ const putStringParameter = async (name: string, value: string, secure?: boolean)
         Value: value,
         Type: secure ? ParameterType.SECURE_STRING : ParameterType.STRING,
     });
-    return await client.send(command).then(() => name)
+    return client.send(command).then(() => name)
 }
 
 const deleteStringParameter = async (name: string) => {
     const command = new DeleteParameterCommand({ Name: name, });
-    return await client.send(command).then(() => { });
+    return client.send(command).then(() => { });
 }
 
-const putKeyPairToParameterStore = async (stackName: string, suffix: string, publicKey: string, privateKey: string) => {
-    return await Promise.allSettled([
-        putStringParameter(`/${stackName}/PublicKey-${suffix}`, publicKey),
-        putStringParameter(`/${stackName}/PrivateKey-${suffix}`, privateKey, true),
+const putKeyPairToParameterStore = async (stackName: string, suffix: string, keyPair: { publicKey: string, privateKey: string }) => {
+    return Promise.allSettled([
+        putStringParameter(`/${stackName}/PublicKey-${suffix}`, keyPair.publicKey),
+        putStringParameter(`/${stackName}/PrivateKey-${suffix}`, keyPair.privateKey, true),
     ]).then(results => {
-        results.forEach(item => {
-            if (item.status === 'rejected') {
-                throw new Error((item as PromiseRejectedResult).reason)
-            }
-        });
+        const item = results.find(item => item.status === 'rejected');
+        if (item) {
+            throw new Error((item as PromiseRejectedResult).reason);
+        }
         return Promise.resolve({
             Data: {
                 PublicKey: (results[0] as PromiseFulfilledResult<string>).value,
@@ -37,11 +36,13 @@ const putKeyPairToParameterStore = async (stackName: string, suffix: string, pub
     });
 }
 
-const deleteKeyPairFromParameterStore = async (stackName: string, suffix: string) => {
-    return await Promise.allSettled([
+const deleteKeyPairFromParameterStore = async (stackName: string, suffix: string, e?: Error) => {
+    return Promise.allSettled([
         deleteStringParameter(`/${stackName}/PublicKey-${suffix}`),
         deleteStringParameter(`/${stackName}/PrivateKey-${suffix}`),
-    ]);
+    ]).then(() => {
+        if (e) { throw e; } else { return {}; }
+    });
 }
 
 export const handler: CdkCustomResourceHandler = async (event, context) => {
@@ -50,28 +51,27 @@ export const handler: CdkCustomResourceHandler = async (event, context) => {
     switch (event.RequestType) {
 
         case 'Create':
-            const { publicKey, privateKey } = generateKeyPairSync('rsa', {
-                modulusLength: 2048,
-                publicKeyEncoding: {
-                    type: 'pkcs1',
-                    format: 'pem'
-                },
-                privateKeyEncoding: {
-                    type: 'pkcs1',
-                    format: 'pem',
-                }
+            return putKeyPairToParameterStore(
+                stackName, event.RequestId,
+                generateKeyPairSync('rsa', {
+                    modulusLength: 2048,
+                    publicKeyEncoding: {
+                        type: 'pkcs1',
+                        format: 'pem'
+                    },
+                    privateKeyEncoding: {
+                        type: 'pkcs1',
+                        format: 'pem',
+                    }
+                })
+            ).catch(e => {
+                return deleteKeyPairFromParameterStore(stackName, event.RequestId, e);
             });
-            try {
-                return await putKeyPairToParameterStore(stackName, event.RequestId, publicKey, privateKey);
-            } catch (e) {
-                await deleteKeyPairFromParameterStore(stackName, event.RequestId);
-                throw e;
-            }
 
         case 'Update':
             return {};
 
         case 'Delete':
-            return await deleteKeyPairFromParameterStore(stackName, event.PhysicalResourceId);
+            return deleteKeyPairFromParameterStore(stackName, event.PhysicalResourceId);
     }
 }
