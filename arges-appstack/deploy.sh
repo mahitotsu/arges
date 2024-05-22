@@ -1,6 +1,6 @@
 #!/bin/bash
+pnpm --prefix ../arges-webapp build && \
 cdk deploy \
-    --buid "pnpm --prefix ../arges-webapp build" \
     --method direct \
     --no-staging \
     --all

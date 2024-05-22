@@ -1,8 +1,8 @@
-import { CfnOutput, CustomResource, Duration, Names, RemovalPolicy, ScopedAws, Stack, StackProps } from "aws-cdk-lib";
+import { CfnOutput, CustomResource, Duration, RemovalPolicy, ScopedAws, Stack, StackProps } from "aws-cdk-lib";
 import { AllowedMethods, CachePolicy, CfnDistribution, CfnOriginAccessControl, Distribution, KeyGroup, OriginRequestPolicy, PublicKey, ResponseHeadersPolicy, ViewerProtocolPolicy } from "aws-cdk-lib/aws-cloudfront";
 import { FunctionUrlOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
 import { Effect, PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
-import { FunctionUrlAuthType, InvokeMode, Runtime } from "aws-cdk-lib/aws-lambda";
+import { Alias, FunctionUrlAuthType, InvokeMode, Runtime } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction, OutputFormat } from "aws-cdk-lib/aws-lambda-nodejs";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
@@ -18,7 +18,7 @@ export class AppStack extends Stack {
         // -----
         // generate a keypair and store the private key in parameter store
         // -----
-        const { publicKey, privateKey } = (() => {
+        const { keyPairName, publicKey, privateKey } = (() => {
             const parent = new Construct(this, 'KeyPairGenerator');
             const handler = new NodejsFunction(parent, 'Handler', {
                 runtime: Runtime.NODEJS_LATEST,
@@ -44,7 +44,7 @@ export class AppStack extends Stack {
                     retention: RetentionDays.ONE_DAY,
                 }),
             });
-            const resource = new CustomResource(parent, 'CustomResource', {
+            const resource = new CustomResource(parent, 'KeyPair', {
                 serviceToken: provider.serviceToken,
                 removalPolicy: RemovalPolicy.DESTROY,
             });
@@ -57,11 +57,15 @@ export class AppStack extends Stack {
                 parameterName: resource.getAttString('PrivateKey'),
                 simpleName: false,
             });
-            return { publicKey, privateKey, }
+            return {
+                keyPairName: resource.node.id,
+                publicKey,
+                privateKey,
+            }
         })();
 
         // -----
-        //
+        // setup webserver for dynamic contents
         // -----
         const { webServer, entryPoint } = (() => {
             const parent = new Construct(this, 'WebServer');
@@ -73,16 +77,25 @@ export class AppStack extends Stack {
                 bundling: {
                     format: OutputFormat.ESM,
                 },
+                environment: {
+                    PRIVATE_KEY_PARAMETER_NAME: privateKey.parameterName,
+                },
                 logGroup: new LogGroup(parent, 'HandlerLog', {
                     removalPolicy: RemovalPolicy.DESTROY,
                     retention: RetentionDays.ONE_DAY,
                 }),
             });
-            const entryPoint = webServer.addFunctionUrl({
+
+            const current = new Alias(parent, 'Current', {
+                aliasName: 'current',
+                version: webServer.currentVersion,
+            });
+            privateKey.grantRead(current);
+            const entryPoint = current.addFunctionUrl({
                 invokeMode: InvokeMode.BUFFERED,
                 authType: FunctionUrlAuthType.AWS_IAM,
             })
-            return { webServer, entryPoint };
+            return { webServer: current, entryPoint };
         })();
 
         // -----
@@ -90,15 +103,15 @@ export class AppStack extends Stack {
         // -----
         (() => {
             const parent = new Construct(this, 'EdgeLocation');
-            const publicKeyForDistribution = new PublicKey(parent, 'PublicKey', {
+            const publicKeyForDistribution = new PublicKey(parent, keyPairName, {
                 encodedKey: publicKey.stringValue,
             });
             const keyGroup = new KeyGroup(parent, 'KeyGroup', {
                 items: [publicKeyForDistribution]
             });
-            const oacForDefaultOrigin = new CfnOriginAccessControl(parent, 'OACForDefaultOrigin', {
+            const oacForDefaultOrigin = new CfnOriginAccessControl(parent, 'DefaultOAC', {
                 originAccessControlConfig: {
-                    name: Names.uniqueResourceName(parent, {}),
+                    name: 'DefaultOAC',
                     originAccessControlOriginType: 'lambda',
                     signingBehavior: 'always',
                     signingProtocol: 'sigv4',
