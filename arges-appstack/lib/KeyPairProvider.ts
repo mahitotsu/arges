@@ -14,7 +14,7 @@ export class KeyPairProvider extends Construct {
 
         const handler = new NodejsFunction(this, 'Handler', {
             runtime: Runtime.NODEJS_LATEST,
-            entry: `${__dirname}/KeyPairProvider/index.ts`,
+            entry: `${__dirname}/KeyPairProvider/keypairGenerator.ts`,
             handler: 'handler',
             timeout: Duration.seconds(30),
             logGroup: new LogGroup(this, 'HandlerLog', {

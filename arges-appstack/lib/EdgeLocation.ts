@@ -17,7 +17,9 @@ export class EdgeLocation extends Construct {
         const { accountId } = new ScopedAws(this);
 
         const secret = new Secret(this, 'Secret', {
-            secretObjectValue: { privateKey: props.keyPairProvider.privateKeyAsJsonString},
+            secretObjectValue: {
+                privateKey: props.keyPairProvider.privateKeyAsJsonString
+            },
         });
 
         const publicKeyForDistribution = new PublicKey(this, props.keyPairProvider.keyPairName, {
@@ -26,9 +28,10 @@ export class EdgeLocation extends Construct {
         const keyGroup = new KeyGroup(this, 'KeyGroup', {
             items: [publicKeyForDistribution]
         });
-        const oacForDefaultOrigin = new CfnOriginAccessControl(this, 'DefaultOAC', {
+
+        const oacLambda = new CfnOriginAccessControl(this, 'OACLambda', {
             originAccessControlConfig: {
-                name: 'DefaultOAC',
+                name: 'OACLambda',
                 originAccessControlOriginType: 'lambda',
                 signingBehavior: 'always',
                 signingProtocol: 'sigv4',
@@ -47,12 +50,13 @@ export class EdgeLocation extends Construct {
             }
         });
         const cfnDistribution = distribution.node.defaultChild as CfnDistribution;
-
-        cfnDistribution.addPropertyOverride('DistributionConfig.Origins.0.OriginAccessControlId', oacForDefaultOrigin.attrId);
-        props.webServer.handler.addPermission('AllowCloudFrontServicePrincipal', {
+        const oacLambdaPermission = {
             principal: new ServicePrincipal('cloudfront.amazonaws.com'),
             action: 'lambda:InvokeFunctionUrl',
             sourceArn: `arn:aws:cloudfront::${accountId}:distribution/${distribution.distributionId}`,
-        });
+        };
+
+        cfnDistribution.addPropertyOverride('DistributionConfig.Origins.0.OriginAccessControlId', oacLambda.attrId);
+        props.webServer.handler.addPermission('AllowCloudFrontServicePrincipal', oacLambdaPermission);
     }
 }
