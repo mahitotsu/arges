@@ -1,4 +1,4 @@
-import { getSignedCookies } from "@aws-sdk/cloudfront-signer";
+import { CloudfrontSignedCookiesOutput, getSignedCookies } from "@aws-sdk/cloudfront-signer";
 import { APIGatewayProxyHandlerV2 } from "aws-lambda";
 
 interface Secret {
@@ -12,7 +12,7 @@ const keyPairId = process.env.KEY_PAIR_ID!
 
 export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
 
-    const secretUrl = `https://localhost:${secretExtensionPort}/secretsmanager/get?secretId=${secretName}`;
+    const secretUrl = `http://localhost:${secretExtensionPort}/secretsmanager/get?secretId=${secretName}`;
     const resultJson = await fetch(secretUrl, {
         method: 'GET',
         headers: {
@@ -22,31 +22,32 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
         .then(response => response.json())
         .then(json => JSON.parse(json['SecretString']) as Secret);
 
-    const cookieHeaders = getSignedCookies({
+    const signedResult = getSignedCookies({
         policy: JSON.stringify({
             Statement: [{
-                // Resource: 'http*://*/*',
                 Condition: {
                     DateLessThan: {
-                        'AWS:EpochTime': Math.floor(new Date().getTime() / 1000),
+                        'AWS:EpochTime': 2147483647
                     },
                 },
             },],
         }),
         keyPairId: keyPairId,
         privateKey: resultJson.privateKey,
-    }) as any;
-    const options = ['Path=/', 'Secure', 'HttpOnly'].join('; ');
-    for (const key in Object.keys(cookieHeaders)) {
-        cookieHeaders[key] = cookieHeaders[key] + options;
+    });
+
+    const options = ['Path=/', 'Secure', 'HttpOnly'];
+    const cookieValues = [];
+    for (const item of Object.keys(signedResult)) {
+        cookieValues.push(`${item}=${[signedResult[item as keyof CloudfrontSignedCookiesOutput], ...options].join('; ')}`);
     }
 
     return {
         statusCode: 200,
         headers: {
             'Content-Type': 'text/plain',
-            ...cookieHeaders,
         },
+        cookies: cookieValues,
         body: JSON.stringify(event, null, 4),
     }
 }
