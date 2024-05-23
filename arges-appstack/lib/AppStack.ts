@@ -1,4 +1,4 @@
-import { Stack, StackProps } from "aws-cdk-lib";
+import { CfnOutput, Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { EdgeLocation } from "./EdgeLocation";
 import { KeyPairProvider } from "./KeyPairProvider";
@@ -14,5 +14,7 @@ export class AppStack extends Stack {
         const edgeLocation = new EdgeLocation(this, 'EdgeLocation', {
             keyPairProvider, webServer,
         });
+
+        new CfnOutput(this, 'WebappLocation', { value: `https://${edgeLocation.domainName}/`, });
     }
 }
