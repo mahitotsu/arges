@@ -1,5 +1,5 @@
 import { CloudfrontSignedCookiesOutput, getSignedCookies } from "@aws-sdk/cloudfront-signer";
-import { APIGatewayProxyHandlerV2 } from "aws-lambda";
+import { APIGatewayProxyHandlerV2, APIGatewayProxyResultV2 } from "aws-lambda";
 
 interface Secret {
     privateKey: string;
@@ -10,7 +10,7 @@ const awsSessionToken = process.env.AWS_SESSION_TOKEN!
 const secretExtensionPort = process.env.PARAMETERS_SECRETS_EXTENSION_HTTP_PORT!
 const keyPairId = process.env.KEY_PAIR_ID!
 
-export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
+export const handler: APIGatewayProxyHandlerV2 = async (event, context): Promise<APIGatewayProxyResultV2> => {
 
     const secretUrl = `http://localhost:${secretExtensionPort}/secretsmanager/get?secretId=${secretName}`;
     const resultJson = await fetch(secretUrl, {

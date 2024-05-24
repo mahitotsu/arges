@@ -1,12 +1,13 @@
-import { RemovalPolicy, ScopedAws } from "aws-cdk-lib";
+import { Fn, Names, RemovalPolicy, ScopedAws } from "aws-cdk-lib";
 import { AllowedMethods, CachePolicy, CfnDistribution, CfnOriginAccessControl, Distribution, KeyGroup, OriginRequestPolicy, PublicKey, ResponseHeadersPolicy, ViewerProtocolPolicy } from "aws-cdk-lib/aws-cloudfront";
 import { FunctionUrlOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
-import { ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import { Effect, PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { Alias, FunctionUrlAuthType, InvokeMode, ParamsAndSecretsLayerVersion, ParamsAndSecretsVersions, Runtime } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import { Construct } from "constructs";
+import { AuthProvider } from "./AuthProvider";
 import { KeyPairProvider } from "./KeyPairProvider";
 import { WebServer } from "./WebServer";
 
@@ -14,16 +15,11 @@ export class EdgeLocation extends Construct {
 
     constructor(scope: Construct, id: string, props: {
         keyPairProvider: KeyPairProvider;
+        authProvider: AuthProvider,
         webServer: WebServer;
     }) {
         super(scope, id);
-        const { accountId } = new ScopedAws(this);
-
-        const secret = new Secret(this, 'Secret', {
-            secretObjectValue: {
-                privateKey: props.keyPairProvider.privateKeyAsJsonString
-            },
-        });
+        const { accountId, region } = new ScopedAws(this);
 
         const publicKeyForDistribution = new PublicKey(this, props.keyPairProvider.keyPairName, {
             encodedKey: props.keyPairProvider.publicKey,
@@ -32,6 +28,7 @@ export class EdgeLocation extends Construct {
             items: [publicKeyForDistribution]
         });
 
+        const secretName = `${Names.uniqueResourceName(props.webServer.handler, {})}`;
         const signIn = (() => {
             const signIn = new Construct(this, 'SignIn');
             const handler = new NodejsFunction(signIn, 'Handler', {
@@ -40,7 +37,7 @@ export class EdgeLocation extends Construct {
                 handler: 'handler',
                 paramsAndSecrets: ParamsAndSecretsLayerVersion.fromVersion(ParamsAndSecretsVersions.V1_0_103),
                 environment: {
-                    'SECRET_NAME': secret.secretName,
+                    'SECRET_NAME': secretName,
                     'KEY_PAIR_ID': publicKeyForDistribution.publicKeyId,
                 },
                 logGroup: new LogGroup(signIn, 'HandlerLog', {
@@ -52,7 +49,11 @@ export class EdgeLocation extends Construct {
                 aliasName: 'current',
                 version: handler.currentVersion,
             });
-            secret.grantRead(current);
+            current.addToRolePolicy(new PolicyStatement({
+                effect: Effect.ALLOW,
+                actions: ['secretsmanager:GetSecretValue'],
+                resources: [`arn:aws:secretsmanager:${region}:${accountId}:secret:${secretName}-*`],
+            }));
             const endpoint = current.addFunctionUrl({
                 authType: FunctionUrlAuthType.AWS_IAM,
                 invokeMode: InvokeMode.BUFFERED,
@@ -69,6 +70,7 @@ export class EdgeLocation extends Construct {
             },
         });
 
+        const callbackPath = '/sign-in';
         const distribution = new Distribution(this, 'Distribution', {
             defaultBehavior: {
                 origin: new FunctionUrlOrigin(props.webServer.endpoint),
@@ -80,7 +82,7 @@ export class EdgeLocation extends Construct {
                 trustedKeyGroups: [keyGroup],
             },
             additionalBehaviors: {
-                '/sign-in': {
+                [callbackPath]: {
                     origin: new FunctionUrlOrigin(signIn.endpoint),
                     viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
                     originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
@@ -102,10 +104,21 @@ export class EdgeLocation extends Construct {
         props.webServer.handler.addPermission('AllowCloudFrontServicePrincipal', oacLambdaPermission);
         signIn.handler.addPermission('AllowCloudFrontServicePrincipal', oacLambdaPermission);
 
-        this._domainName = distribution.domainName;
+        props.authProvider.addDomain(Fn.select(0, Fn.split('.', distribution.domainName)));
+        props.authProvider.addClient(`https://${distribution.domainName}${callbackPath}`);
+
+        const secret = new Secret(this, 'Secret', {
+            secretName,
+            secretObjectValue: {
+                privateKey: props.keyPairProvider.privateKeyAsJsonString,
+                clientSecret: props.authProvider.client!.userPoolClientSecret,
+            },
+        });
+
+        this._signInUrl = props.authProvider.signInUrl;
     }
 
-    private readonly _domainName: string;
+    private readonly _signInUrl: string | undefined;
 
-    get domainName() { return this._domainName; }
+    get signInUrl() { return this._signInUrl; }
 }
