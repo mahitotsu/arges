@@ -33,12 +33,14 @@ export class EdgeLocation extends Construct {
             const signIn = new Construct(this, 'SignIn');
             const handler = new NodejsFunction(signIn, 'Handler', {
                 runtime: Runtime.NODEJS_LATEST,
+                memorySize: 256,
                 entry: `${__dirname}/EdgeLocation/signInHandler.ts`,
                 handler: 'handler',
                 paramsAndSecrets: ParamsAndSecretsLayerVersion.fromVersion(ParamsAndSecretsVersions.V1_0_103),
                 environment: {
                     'SECRET_NAME': secretName,
                     'KEY_PAIR_ID': publicKeyForDistribution.publicKeyId,
+                    'USER_POOL_ID': props.authProvider.userPool.userPoolId,
                 },
                 logGroup: new LogGroup(signIn, 'HandlerLog', {
                     removalPolicy: RemovalPolicy.DESTROY,
