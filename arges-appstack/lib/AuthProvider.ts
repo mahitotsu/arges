@@ -21,16 +21,17 @@ export class AuthProvider extends Construct {
     private readonly _userPool;
     private _domain: UserPoolDomain | undefined;
     private _client: UserPoolClient | undefined;
-    private _callbackurl: string | undefined;
+    private _callbackUrl: string | undefined;
 
     get userPool() { return this._userPool; }
     get domain() { return this._domain; }
     get client() { return this._client; }
     get signInUrl() {
-        return this._domain && this._client && this._callbackurl
-            ? this._domain.signInUrl(this._client, { redirectUri: this._callbackurl })
+        return this._domain && this._client && this._callbackUrl
+            ? this._domain.signInUrl(this._client, { redirectUri: this._callbackUrl })
             : undefined;
     }
+    get redirectUrl() { return this._callbackUrl; }
 
     addDomain(domainPrefix: string) {
         this._domain = this._userPool.addDomain('Domain', {
@@ -55,6 +56,6 @@ export class AuthProvider extends Construct {
                 userPassword: true,
             },
         });
-        this._callbackurl = callbackUrl;
+        this._callbackUrl = callbackUrl;
     }
 }    

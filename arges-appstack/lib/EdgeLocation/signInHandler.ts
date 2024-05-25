@@ -3,7 +3,9 @@ import { APIGatewayProxyHandlerV2, APIGatewayProxyResultV2 } from "aws-lambda";
 
 interface Secret {
     privateKey: string;
+    clientId: string;
     clientSecret: string;
+    redirectUrl: string;
 }
 
 interface Endpoints {
@@ -15,6 +17,12 @@ interface Endpoints {
     userinfo_endpoint: string;
 }
 
+interface Tokens {
+    id_token: string;
+    access_token: string;
+    refresh_token: string;
+}
+
 const region = process.env.AWS_DEFAULT_REGION!
 const awsSessionToken = process.env.AWS_SESSION_TOKEN!
 const secretName = process.env.SECRET_NAME!
@@ -23,11 +31,14 @@ const keyPairId = process.env.KEY_PAIR_ID!
 const userPoolId = process.env.USER_POOL_ID!
 
 const cognitoEndpoints = (async () => {
-    return fetch(`https://cognito-idp.${region}.amazonaws.com/${userPoolId}/.well-known/openid-configuration`, {
-        method: 'GET',
-    })
+    return fetch(`https://cognito-idp.${region}.amazonaws.com/${userPoolId}/.well-known/openid-configuration`)
         .then(res => res.json())
         .then(json => json as Endpoints);
+})();
+const keys = (async () => {
+    return fetch((await cognitoEndpoints).jwks_uri)
+        .then(res => res.json())
+        .then(json => json);
 })();
 
 const forbiddenResponse = {
@@ -41,13 +52,15 @@ const forbiddenResponse = {
 export const handler: APIGatewayProxyHandlerV2 = async (event, context): Promise<APIGatewayProxyResultV2> => {
 
     const endpoints = await cognitoEndpoints;
+    const authorizationCode = event.queryStringParameters ? event.queryStringParameters.code : undefined;
     const referer = event.headers.referer;
-    if (referer == undefined || endpoints.authorization_endpoint.startsWith(referer) == false) {
+    if (authorizationCode == undefined
+        || referer == undefined || endpoints.authorization_endpoint.startsWith(referer) == false) {
         return forbiddenResponse;
     }
 
     const secretUrl = `http://localhost:${secretExtensionPort}/secretsmanager/get?secretId=${secretName}`;
-    const resultJson = await fetch(secretUrl, {
+    const secretValue = await fetch(secretUrl, {
         method: 'GET',
         headers: {
             'X-Aws-Parameters-Secrets-Token': awsSessionToken,
@@ -55,6 +68,29 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context): Promise
     })
         .then(response => response.json())
         .then(json => JSON.parse(json['SecretString']) as Secret);
+
+    const tokens = await fetch(endpoints.token_endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            'grant_type': 'authorization_code',
+            'client_id': secretValue.clientId,
+            'client_secret': secretValue.clientSecret,
+            'code': authorizationCode,
+            'redirect_uri': secretValue.redirectUrl,
+        })
+    })
+        .then(res => res.json())
+        .then(json => json as Tokens);
+
+    const userInfo = await fetch(endpoints.userinfo_endpoint, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${tokens.access_token}`,
+        },
+    })
+        .then(res => res.json())
+        .then(json => json);
 
     const signedOutput = getSignedCookies({
         policy: JSON.stringify({
@@ -67,7 +103,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context): Promise
             },],
         }),
         keyPairId: keyPairId,
-        privateKey: resultJson.privateKey,
+        privateKey: secretValue.privateKey,
     });
 
     const options = ['Path=/', 'Secure', 'HttpOnly'];
@@ -82,6 +118,10 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context): Promise
             'Content-Type': 'text/plain',
         },
         cookies: cookieValues,
-        body: JSON.stringify(event, null, 4),
+        body: JSON.stringify({
+            event,
+            tokens,
+            userInfo,
+        }, null, 4),
     }
 }

@@ -1,4 +1,4 @@
-import { Fn, Names, RemovalPolicy, ScopedAws } from "aws-cdk-lib";
+import { Fn, Names, RemovalPolicy, ScopedAws, SecretValue } from "aws-cdk-lib";
 import { AllowedMethods, CachePolicy, CfnDistribution, CfnOriginAccessControl, Distribution, KeyGroup, OriginRequestPolicy, PublicKey, ResponseHeadersPolicy, ViewerProtocolPolicy } from "aws-cdk-lib/aws-cloudfront";
 import { FunctionUrlOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
 import { Effect, PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
@@ -113,7 +113,9 @@ export class EdgeLocation extends Construct {
             secretName,
             secretObjectValue: {
                 privateKey: props.keyPairProvider.privateKeyAsJsonString,
+                clientId: SecretValue.unsafePlainText(props.authProvider.client!.userPoolClientId),
                 clientSecret: props.authProvider.client!.userPoolClientSecret,
+                redirectUrl: SecretValue.unsafePlainText(props.authProvider.redirectUrl!),
             },
         });
 
