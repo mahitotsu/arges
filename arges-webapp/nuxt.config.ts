@@ -4,5 +4,8 @@ export default defineNuxtConfig({
   nitro: {
     preset: 'aws-lambda',
     serveStatic: false,
+    externals: {
+      inline: ['aws-sdk']
+    },
   }
 })
