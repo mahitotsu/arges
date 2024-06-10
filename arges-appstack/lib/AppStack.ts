@@ -19,6 +19,7 @@ export class AppStack extends Stack {
             runtime: Runtime.NODEJS_20_X,
             architecture: Architecture.ARM_64,
             memorySize: 256,
+            reservedConcurrentExecutions: 10,
         });
         const currentServer = new Alias(serverFunction, 'CurrentServer', {
             aliasName: 'current',
