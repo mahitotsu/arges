@@ -1,17 +1,28 @@
-import { CfnOutput, RemovalPolicy, ScopedAws, Stack, StackProps } from "aws-cdk-lib";
+import { CfnOutput, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
+import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
 import { AllowedMethods, CachePolicy, CfnDistribution, CfnOriginAccessControl, Distribution, OriginRequestPolicy } from "aws-cdk-lib/aws-cloudfront";
 import { FunctionUrlOrigin, S3Origin } from "aws-cdk-lib/aws-cloudfront-origins";
 import { Effect, PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { Alias, Architecture, Code, Function, FunctionUrlAuthType, InvokeMode, Runtime } from "aws-cdk-lib/aws-lambda";
+import { ARecord, PublicHostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
+import { CloudFrontTarget } from "aws-cdk-lib/aws-route53-targets";
 import { BlockPublicAccess, Bucket } from "aws-cdk-lib/aws-s3";
 import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
-import { Construct } from "constructs";
+import { Construct } from 'constructs';
 
 export class AppStack extends Stack {
 
     constructor(scope: Construct, id: string, props: StackProps) {
         super(scope, id, props);
-        const { accountId } = new ScopedAws(this);
+
+        const domainName = 'mahitotsu.com';
+        const webappRecordName = 'www';
+        const authRecordName = 'auth';
+        const hostedZone = PublicHostedZone.fromHostedZoneAttributes(this, 'HostedZone', {
+            zoneName: 'mahitotsu.com', hostedZoneId: 'Z00285912B2ULPDZAM9V9',
+        });
+        const certificate = Certificate.fromCertificateArn(this, 'Certificate',
+            `arn:aws:acm:us-east-1:${this.account}:certificate/053dc7b0-3805-42bd-8d17-28db8cc027bc`);
 
         const serverFunction = new Function(this, 'ServerFunction', {
             code: Code.fromAsset(`${__dirname}/../../arges-webapp/.output/dist`),
@@ -60,14 +71,11 @@ export class AppStack extends Stack {
             }
         });
 
+        // const publicKey = new PublicKey(this, 'PublicKey', { encodedKey: keyPair.publicKey })
+        // const keyGroup = new KeyGroup(this, 'KeyGroup', { items: [publicKey] });
         const distribution = new Distribution(this, 'WebappDistribution', {
-            defaultBehavior: {
-                origin: new FunctionUrlOrigin(serverUrl),
-                cachePolicy: CachePolicy.CACHING_DISABLED,
-                allowedMethods: AllowedMethods.ALLOW_ALL,
-                originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
-                compress: true,
-            },
+            domainNames: [`${webappRecordName}.${domainName}`],
+            certificate,
             additionalBehaviors: {
                 '*.*': {
                     origin: new S3Origin(publicAssetsBucket, { originPath: 'public' }),
@@ -75,8 +83,22 @@ export class AppStack extends Stack {
                     allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
                     originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
                     compress: true,
+            //        trustedKeyGroups: [keyGroup],
                 }
-            }
+            },
+            defaultBehavior: {
+                origin: new FunctionUrlOrigin(serverUrl),
+                cachePolicy: CachePolicy.CACHING_DISABLED,
+                allowedMethods: AllowedMethods.ALLOW_ALL,
+                originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+                compress: true,
+                // trustedKeyGroups: [keyGroup],
+            },
+        });
+        const webappRecord = new ARecord(this, 'WebappRecord', {
+            zone: hostedZone,
+            recordName: webappRecordName,
+            target: RecordTarget.fromAlias(new CloudFrontTarget(distribution)),
         });
 
         const cfnDistribution = distribution.node.defaultChild as CfnDistribution;
@@ -87,7 +109,7 @@ export class AppStack extends Stack {
         currentServer.addPermission('OacPermission', {
             principal: new ServicePrincipal('cloudfront.amazonaws.com'),
             action: 'lambda:InvokeFunctionUrl',
-            sourceArn: `arn:aws:cloudfront::${accountId}:distribution/${distribution.distributionId}`,
+            sourceArn: `arn:aws:cloudfront::${this.account}:distribution/${distribution.distributionId}`,
         });
         publicAssetsBucket.addToResourcePolicy(new PolicyStatement({
             effect: Effect.ALLOW,
@@ -96,11 +118,11 @@ export class AppStack extends Stack {
             resources: [publicAssetsBucket.arnForObjects('*')],
             conditions: {
                 StringEquals: {
-                    'aws:SourceArn': `arn:aws:cloudfront::${accountId}:distribution/${distribution.distributionId}`,
+                    'aws:SourceArn': `arn:aws:cloudfront::${this.account}:distribution/${distribution.distributionId}`,
                 }
             }
         }));
 
-        new CfnOutput(this, 'WebappUrl', { value: `https://${distribution.distributionDomainName}` });
+        new CfnOutput(this, 'WebappUrl', { value: `https://${webappRecord.domainName}` });
     }
 }
