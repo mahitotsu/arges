@@ -1,6 +1,6 @@
 import { CfnOutput, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
 import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
-import { AllowedMethods, CachePolicy, CfnDistribution, CfnOriginAccessControl, Distribution, OriginRequestPolicy } from "aws-cdk-lib/aws-cloudfront";
+import { AllowedMethods, CachePolicy, CfnDistribution, CfnOriginAccessControl, Distribution, KeyGroup, OriginRequestPolicy, PublicKey } from "aws-cdk-lib/aws-cloudfront";
 import { FunctionUrlOrigin, S3Origin } from "aws-cdk-lib/aws-cloudfront-origins";
 import { Effect, PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { Alias, Architecture, Code, Function, FunctionUrlAuthType, InvokeMode, Runtime } from "aws-cdk-lib/aws-lambda";
@@ -9,6 +9,7 @@ import { CloudFrontTarget } from "aws-cdk-lib/aws-route53-targets";
 import { BlockPublicAccess, Bucket } from "aws-cdk-lib/aws-s3";
 import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
 import { Construct } from 'constructs';
+import { KeyPairProvider } from "./keypair/KeyPairProvider";
 
 export class AppStack extends Stack {
 
@@ -23,6 +24,7 @@ export class AppStack extends Stack {
         });
         const certificate = Certificate.fromCertificateArn(this, 'Certificate',
             `arn:aws:acm:us-east-1:${this.account}:certificate/053dc7b0-3805-42bd-8d17-28db8cc027bc`);
+        const keyPair = new KeyPairProvider(this, 'KeyPair');
 
         const serverFunction = new Function(this, 'ServerFunction', {
             code: Code.fromAsset(`${__dirname}/../../arges-webapp/.output/dist`),
@@ -71,8 +73,8 @@ export class AppStack extends Stack {
             }
         });
 
-        // const publicKey = new PublicKey(this, 'PublicKey', { encodedKey: keyPair.publicKey })
-        // const keyGroup = new KeyGroup(this, 'KeyGroup', { items: [publicKey] });
+        const publicKey = new PublicKey(this, 'PublicKey', { encodedKey: keyPair.publicKey })
+        const keyGroup = new KeyGroup(this, 'KeyGroup', { items: [publicKey] });
         const distribution = new Distribution(this, 'WebappDistribution', {
             domainNames: [`${webappRecordName}.${domainName}`],
             certificate,
@@ -83,7 +85,7 @@ export class AppStack extends Stack {
                     allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
                     originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
                     compress: true,
-            //        trustedKeyGroups: [keyGroup],
+                    trustedKeyGroups: [keyGroup],
                 }
             },
             defaultBehavior: {
@@ -92,7 +94,7 @@ export class AppStack extends Stack {
                 allowedMethods: AllowedMethods.ALLOW_ALL,
                 originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
                 compress: true,
-                // trustedKeyGroups: [keyGroup],
+                trustedKeyGroups: [keyGroup],
             },
         });
         const webappRecord = new ARecord(this, 'WebappRecord', {
