@@ -4,5 +4,8 @@ export default defineNuxtConfig({
   nitro: {
     preset: 'aws-lambda',
     minify: true,
+  },
+  runtimeConfig: {
+    signInUrl: '',
   }
 })
