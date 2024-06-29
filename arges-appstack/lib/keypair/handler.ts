@@ -1,8 +1,5 @@
-import { DeleteParameterCommand, PutParameterCommand, SSMClient } from "@aws-sdk/client-ssm";
 import { CdkCustomResourceHandler } from "aws-lambda";
 import { generateKeyPairSync } from 'crypto';
-
-const client = new SSMClient();
 
 export const handler: CdkCustomResourceHandler = async (event) => {
 
@@ -19,22 +16,12 @@ export const handler: CdkCustomResourceHandler = async (event) => {
                     format: 'pem'
                 }
             });
-            await client.send(new PutParameterCommand({
-                Name: event.LogicalResourceId,
-                Type: 'SecureString',
-                Value: privateKey,
-                Overwrite: true
-            }));
             return {
                 Data: {
                     publicKey,
-                    privateKey: event.LogicalResourceId,
+                    privateKey,
                 }
             }
-        case 'Delete':
-            await client.send(new DeleteParameterCommand({
-                Name: event.PhysicalResourceId
-            }));
         default:
             return {};
     }

@@ -1,5 +1,4 @@
 import { CustomResource, RemovalPolicy, ScopedAws, SecretValue } from "aws-cdk-lib";
-import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Provider } from "aws-cdk-lib/custom-resources";
@@ -16,11 +15,6 @@ export class KeyPairProvider extends Construct {
             handler: 'handler',
             runtime: Runtime.NODEJS_20_X,
         });
-        handler.addToRolePolicy(new PolicyStatement({
-            effect: Effect.ALLOW,
-            actions: ['ssm:PutParameter', 'ssm:DeleteParameter'],
-            resources: [`arn:aws:ssm:${region}:${accountId}:parameter/*`],
-        }))
 
         const provider = new Provider(this, 'Provider', {
             onEventHandler: handler,

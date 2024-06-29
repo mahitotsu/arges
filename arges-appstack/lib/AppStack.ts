@@ -4,7 +4,7 @@ import { AllowedMethods, CachePolicy, CfnDistribution, CfnOriginAccessControl, D
 import { FunctionUrlOrigin, S3Origin } from "aws-cdk-lib/aws-cloudfront-origins";
 import { Mfa, OAuthScope, UserPool } from "aws-cdk-lib/aws-cognito";
 import { Effect, PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
-import { Alias, Architecture, Code, Function, FunctionUrlAuthType, InvokeMode, Runtime } from "aws-cdk-lib/aws-lambda";
+import { Alias, Architecture, Code, Function, FunctionUrlAuthType, InvokeMode, ParamsAndSecretsLayerVersion, ParamsAndSecretsVersions, Runtime } from "aws-cdk-lib/aws-lambda";
 import { ARecord, PublicHostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { CloudFrontTarget, UserPoolDomainTarget } from "aws-cdk-lib/aws-route53-targets";
 import { BlockPublicAccess, Bucket } from "aws-cdk-lib/aws-s3";
@@ -63,16 +63,24 @@ export class AppStack extends Stack {
         // ==========
         // Nuxt3 server
         // ==========
+        /*
+        const secrets = new Secret(this, 'Secrets', {
+            secretObjectValue: {
+                signingKey: keyPair.privateKey,
+                clientSecret: authClient.userPoolClientSecret,
+            }
+        });
+        */
         const serverFunction = new Function(this, 'ServerFunction', {
             environment: {
-                NUXT_SIGN_IN_URL: authDomain.signInUrl(authClient, {
-                    redirectUri: callbackUrl,
-                })
+                NUXT_SIGN_IN_URL: authDomain.signInUrl(authClient, { redirectUri: callbackUrl, }),
+                NUXT_CALLBACK_URL: callbackUrl,
             },
             code: Code.fromAsset(`${__dirname}/../../arges-webapp/.output/dist`),
             handler: 'index.handler',
             runtime: Runtime.NODEJS_20_X,
             architecture: Architecture.ARM_64,
+            paramsAndSecrets: ParamsAndSecretsLayerVersion.fromVersion(ParamsAndSecretsVersions.V1_0_103),
             memorySize: 256,
             reservedConcurrentExecutions: 10,
         });
@@ -138,7 +146,7 @@ export class AppStack extends Stack {
                 httpStatus: 403,
                 responseHttpStatus: 200,
                 responsePagePath: `${oauth2Prefix}/redirectToSignInUrl`,
-            }]
+            }],
         });
         distribution.addBehavior(`${oauth2Prefix}/*`, new FunctionUrlOrigin(serverUrl), {
             cachePolicy: CachePolicy.CACHING_DISABLED,

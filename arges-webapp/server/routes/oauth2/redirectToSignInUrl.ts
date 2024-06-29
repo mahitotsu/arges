@@ -7,6 +7,7 @@ const errorPage = `<!doctype html>
     <meta http-equiv="refresh" content="3;url=${signInUrl}" />
 </head>
 <body>
+    <p>Redirecting to the sign-in page shortly ...</p>
 </body>
 </html>
 `
