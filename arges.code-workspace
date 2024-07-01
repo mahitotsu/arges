@@ -3,11 +3,5 @@
         {
             "path": "."
         },
-        {
-            "path": "./arges-appstack"
-        },
-        {
-            "path": "./arges-webapp"
-        }
     ]
 }
