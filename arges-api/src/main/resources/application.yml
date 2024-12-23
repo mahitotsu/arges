@@ -1,0 +1,8 @@
+spring:
+  main:
+    banner-mode: off
+  datasource:
+    url: jdbc:postgresql://${DSQL_ENDPOINT}/postgres?ssl=required
+    username: admin
+  jpa:
+    open-in-view: false
