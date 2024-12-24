@@ -1,4 +1,4 @@
-package com.mahitotsu.arges.api.configs;
+package com.mahitotsu.arges.api.config;
 
 import javax.sql.DataSource;
 
@@ -6,6 +6,8 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import com.zaxxer.hikari.HikariDataSource;
 
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -29,6 +31,9 @@ public class RdbConfiguration {
         final String token = dsqlUtilities.generateDbConnectAdminAuthToken(builder -> builder.hostname(endpoint));
         dataSourceProperties.setPassword(token);
 
-        return dataSourceProperties.initializeDataSourceBuilder().build();
+        final HikariDataSource ds = dataSourceProperties.initializeDataSourceBuilder().type(HikariDataSource.class)
+                .build();
+        ds.setExceptionOverrideClassName(DsqlExceptionOverride.class.getName());
+        return ds;
     }
 }
