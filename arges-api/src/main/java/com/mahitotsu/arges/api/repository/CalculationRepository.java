@@ -11,6 +11,7 @@ import com.mahitotsu.arges.api.entity.CalculationEntity;
 import com.mahitotsu.arges.api.service.Operator;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.LockModeType;
 
 @Repository
@@ -44,8 +45,6 @@ public class CalculationRepository {
     public int getCurrent(final UUID id) {
 
         final CalculationEntity calculation = this.entityManager.getReference(CalculationEntity.class, id);
-        this.entityManager.lock(calculation, LockModeType.PESSIMISTIC_READ);
-
         return calculation.getCurrent();
     }
 
@@ -53,9 +52,12 @@ public class CalculationRepository {
     public void delete(final UUID id) {
 
         final CalculationEntity calculation = this.entityManager.getReference(CalculationEntity.class, id);
-        if (calculation != null) {
+
+        try {
             this.entityManager.lock(calculation, LockModeType.PESSIMISTIC_WRITE);
             this.entityManager.remove(calculation);
+        } catch (EntityNotFoundException e) {
+            //
         }
     }
 }

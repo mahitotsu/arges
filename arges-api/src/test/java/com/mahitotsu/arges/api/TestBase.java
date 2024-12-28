@@ -9,7 +9,7 @@ import org.springframework.web.client.support.RestClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
-        "DSQL_ENDPOINT=4iabtwnq2j55iez4j4bkykghgm.dsql.us-east-1.on.aws",
+        "DSQL_ENDPOINT=4iabtwnq2j55iez4j4bkykghgm.dsql.us-east-1.on.aws,s4abtwnq2jebk7aj6vhlsb2coi.dsql.us-east-2.on.aws",
 })
 @ActiveProfiles({ "test" })
 public abstract class TestBase {

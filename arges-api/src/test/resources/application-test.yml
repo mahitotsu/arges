@@ -6,4 +6,4 @@ spring:
 
 logging:
   level:
-    org.hibernate.tool.schema.internal.ExceptionHandlerLoggedImpl: OFF 
+    org.hibernate.tool.schema.internal.ExceptionHandlerLoggedImpl: ERROR
