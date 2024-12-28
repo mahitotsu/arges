@@ -1,6 +1,5 @@
 package com.mahitotsu.arges.api.service.impl;
 
-import java.math.RoundingMode;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,11 +15,11 @@ public class CalculatorServiceImpl implements CalculatorService {
     @Autowired
     private CalculationRepository repository;
     
-    public String start(final int initialValue, final RoundingMode roundingMode) {
-        return this.repository.create(initialValue, roundingMode).toString();
+    public String open(final int initialValue) {
+        return this.repository.create(initialValue).toString();
     }
 
-    public void push(final String calculationId, final Operator oeprator, final int operand) {
+    public void transact(final String calculationId, final Operator oeprator, final int operand) {
         this.repository.apply(UUID.fromString(calculationId), oeprator, operand);
     }
 
@@ -28,7 +27,7 @@ public class CalculatorServiceImpl implements CalculatorService {
         return this.repository.getCurrent(UUID.fromString(calculationId));
     }
 
-    public void clear(final String calculationId) {
+    public void close(final String calculationId) {
         this.repository.delete(UUID.fromString(calculationId));
     }
 }

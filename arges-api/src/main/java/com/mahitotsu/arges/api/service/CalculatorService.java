@@ -1,14 +1,12 @@
 package com.mahitotsu.arges.api.service;
 
-import java.math.RoundingMode;
-
 public interface CalculatorService {
 
-    String start(int initialValue, RoundingMode roundingMode);
+    String open(int initialValue );
 
-    void push(String calculationId, Operator operator, int operand);
+    void transact(String calculationId, Operator operator, int operand);
 
     int current(String calculationId);
 
-    void clear(String calculationId);
+    void close(String calculationId);
 }

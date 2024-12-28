@@ -1,4 +1,9 @@
 spring:
   jpa:
-    generate-ddl: true
     show-sql: true
+    hibernate:
+      ddl-auto: create-drop
+
+logging:
+  level:
+    org.hibernate.tool.schema.internal.ExceptionHandlerLoggedImpl: OFF 

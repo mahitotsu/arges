@@ -1,15 +1,11 @@
 package com.mahitotsu.arges.api.entity;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.UUID;
 
 import com.mahitotsu.arges.api.service.Operator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Version;
 import lombok.AccessLevel;
@@ -21,13 +17,11 @@ import lombok.Setter;
 @Entity
 public class CalculationEntity {
 
-    @SuppressWarnings("unused")
-    private CalculationEntity() {
+    CalculationEntity() {
     }
 
-    public CalculationEntity(final UUID id, final int initialValue, final RoundingMode mode) {
+    public CalculationEntity(final UUID id, final int initialValue) {
         this.id = id;
-        this.mode = mode;
         this.current = initialValue;
     }
 
@@ -41,10 +35,6 @@ public class CalculationEntity {
     @Version
     private long modCount;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private RoundingMode mode;
-
     @Column(nullable = false)
     private int current;
 
@@ -56,13 +46,6 @@ public class CalculationEntity {
                 return;
             case SUB:
                 this.current -= operand;
-                return;
-            case MUL:
-                this.current *= operand;
-                return;
-            case DIV:
-                final BigDecimal value = BigDecimal.valueOf(this.current);
-                this.current = value.divide(BigDecimal.valueOf(operand), this.mode).intValue();
                 return;
             default:
                 throw new IllegalArgumentException("The specified operator is an unkonwn value.");

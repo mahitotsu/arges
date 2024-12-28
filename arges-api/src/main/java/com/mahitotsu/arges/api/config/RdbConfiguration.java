@@ -34,6 +34,7 @@ public class RdbConfiguration {
         final HikariDataSource ds = dataSourceProperties.initializeDataSourceBuilder().type(HikariDataSource.class)
                 .build();
         ds.setExceptionOverrideClassName(DsqlExceptionOverride.class.getName());
+
         return ds;
     }
 }
