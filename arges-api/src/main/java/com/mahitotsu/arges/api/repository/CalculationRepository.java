@@ -38,12 +38,12 @@ public class CalculationRepository {
 
     @Retryable(retryFor = CannotAcquireLockException.class, maxAttempts = 64, backoff = @Backoff(random = true))
     @Transactional
-    public void apply(final UUID id, final Operator oeprator, final int value) {
+    public void apply(final UUID id, final Operator oeprator, final int operand) {
 
         final CalculationEntity calculation = this.entityManager.getReference(CalculationEntity.class, id);
         this.entityManager.lock(calculation, LockModeType.PESSIMISTIC_WRITE);
 
-        calculation.apply(oeprator, value);
+        calculation.apply(oeprator, operand);
     }
 
     @Transactional(readOnly = true)
