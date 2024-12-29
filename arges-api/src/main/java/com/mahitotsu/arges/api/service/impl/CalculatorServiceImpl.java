@@ -24,7 +24,7 @@ public class CalculatorServiceImpl implements CalculatorService {
     }
 
     public int current(final String calculationId) {
-        return this.repository.getCurrent(UUID.fromString(calculationId));
+        return this.repository.get(UUID.fromString(calculationId)).getCurrent();
     }
 
     public void close(final String calculationId) {

@@ -5,9 +5,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.mahitotsu.arges.api.CalculatorApi.CloseRequest;
 import com.mahitotsu.arges.api.CalculatorApi.CurrentRequest;
@@ -39,8 +44,19 @@ public class CalculatorApiTest extends TestBase {
         }
     }
 
-    @Test
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    @RepeatedTest(value = 5, name = "{displayName} - repetition {currentRepetition} of {totalRepetitions}")
     public void testSingleThread() {
+        this.invokeTestCase(1);
+    }
+
+    @RepeatedTest(value = 5, name = "{displayName} - repetition {currentRepetition} of {totalRepetitions}")
+    public void testMultiThread() {
+        this.invokeTestCase(10);
+    }
+
+    private void invokeTestCase(final int numOfThreads) {
 
         final List<Operation> operations = new LinkedList<>();
         IntStream.range(0, 10).forEach(i -> operations.add(new Operation("ADD", i + 1)));
@@ -51,13 +67,22 @@ public class CalculatorApiTest extends TestBase {
         final String calculationId = apiClient.open(new StartRequest(0));
         final CalculationTask task = new CalculationTask(apiClient, calculationId, operations);
 
+        final int numOfTasks = 10;
+        final CompletionService<Integer> completion = new ExecutorCompletionService<>(
+                Executors.newFixedThreadPool(numOfThreads));
+        IntStream.range(0, numOfTasks).forEach(i -> completion.submit(task));
+
         try {
-            assertEquals(expectedValue, task.call());
+            int actual = 0;
+            for (int i = 0; i < numOfTasks; i++) {
+                actual = completion.take().get();
+                this.logger.info("Complete calculation task: " + i);
+            }
+            assertEquals(expectedValue * numOfTasks, actual);
         } catch (Exception e) {
             fail(e);
         } finally {
             apiClient.close(new CloseRequest(calculationId));
         }
-
     }
 }

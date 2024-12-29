@@ -4,6 +4,9 @@ import java.util.Random;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +25,7 @@ public class CalculationRepository {
     @Autowired
     private EntityManager entityManager;
 
+    @Retryable(retryFor = CannotAcquireLockException.class, maxAttempts = 64, backoff = @Backoff(random = true))
     @Transactional
     public UUID create(final int initialValue) {
 
@@ -32,6 +36,7 @@ public class CalculationRepository {
         return calculation.getId();
     }
 
+    @Retryable(retryFor = CannotAcquireLockException.class, maxAttempts = 64, backoff = @Backoff(random = true))
     @Transactional
     public void apply(final UUID id, final Operator oeprator, final int value) {
 
@@ -42,10 +47,9 @@ public class CalculationRepository {
     }
 
     @Transactional(readOnly = true)
-    public int getCurrent(final UUID id) {
+    public CalculationEntity get(final UUID id) {
 
-        final CalculationEntity calculation = this.entityManager.getReference(CalculationEntity.class, id);
-        return calculation.getCurrent();
+        return this.entityManager.find(CalculationEntity.class, id);
     }
 
     @Transactional

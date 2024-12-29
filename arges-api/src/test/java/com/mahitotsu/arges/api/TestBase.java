@@ -1,5 +1,6 @@
 package com.mahitotsu.arges.api;
 
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -12,6 +13,7 @@ import org.springframework.web.service.invoker.HttpServiceProxyFactory;
         "DSQL_ENDPOINT=4iabtwnq2j55iez4j4bkykghgm.dsql.us-east-1.on.aws,s4abtwnq2jebk7aj6vhlsb2coi.dsql.us-east-2.on.aws",
 })
 @ActiveProfiles({ "test" })
+@ExtendWith(TimingLoggerExtension.class)
 public abstract class TestBase {
 
     @LocalServerPort

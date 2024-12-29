@@ -2,7 +2,6 @@ package com.mahitotsu.arges.api;
 
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.service.annotation.GetExchange;
 import org.springframework.web.service.annotation.HttpExchange;
 import org.springframework.web.service.annotation.PostExchange;
 
@@ -31,7 +30,6 @@ public interface CalculatorApi {
         private String operator;
         private int operand;
     }
-
     @Value
     @AllArgsConstructor
     class CurrentRequest {
@@ -54,6 +52,6 @@ public interface CalculatorApi {
     @PostExchange(url="/transact")
     void transact(@RequestBody final TransactRequest request);
 
-    @GetExchange(url="/current")
+    @PostExchange(url="/current")
     CurrentResponse current(@RequestBody final CurrentRequest request);
 }
