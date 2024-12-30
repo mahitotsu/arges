@@ -1,6 +1,5 @@
 package com.mahitotsu.arges.api.config;
 
-import java.sql.SQLException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
