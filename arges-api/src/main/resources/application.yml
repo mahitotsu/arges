@@ -1,8 +1,11 @@
 spring:
   main:
     banner-mode: off
-  datasource:
-    url: jdbc:postgresql://${DSQL_ENDPOINT}/postgres?ssl=required&targetServerType=primary
-    username: admin
-  jpa:
-    open-in-view: false
+  a:
+    datasource:
+      url: jdbc:postgresql://4iabtwnq2j55iez4j4bkykghgm.dsql.us-east-1.on.aws/postgres?ssl=required&targetServerType=primary
+      username: admin
+  b:
+    datasource:
+      url: jdbc:postgresql://s4abtwnq2jebk7aj6vhlsb2coi.dsql.us-east-2.on.aws/postgres?ssl=required&targetServerType=primary
+      username: admin
