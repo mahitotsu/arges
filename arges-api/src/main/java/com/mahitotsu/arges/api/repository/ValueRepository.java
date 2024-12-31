@@ -57,6 +57,7 @@ public class ValueRepository {
         }
 
         final Integer nextValue = currentValue + 1;
+        System.out.println(currentValue + ", " + nextValue);
         sqlClient.update("UPDATE v_table SET value = ? WHERE id = ?", nextValue, key);
         return nextValue;
     }

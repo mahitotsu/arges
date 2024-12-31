@@ -1,6 +1,7 @@
 package com.mahitotsu.arges.api;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,17 +14,20 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.mahitotsu.arges.api.repository.ValueRepository;
 
+@Execution(ExecutionMode.SAME_THREAD)
 public class ConcurrencyTest extends TestBase {
 
     @Autowired
     private ValueRepository repository;
 
-    @Test
+    @RepeatedTest(name = RepeatedTest.LONG_DISPLAY_NAME, value = 5)
     public void testIncrements_SingleThread() throws Exception {
 
         final UUID key = this.insertTask(0).call();
@@ -35,7 +39,7 @@ public class ConcurrencyTest extends TestBase {
         this.assertTask(key, 10);
     }
 
-    @Test
+    @RepeatedTest(name = RepeatedTest.LONG_DISPLAY_NAME, value = 5)
     public void testIncrements_MultiThread() throws Exception {
 
         final UUID key = this.insertTask(0).call();
