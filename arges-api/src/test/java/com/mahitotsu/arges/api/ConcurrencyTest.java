@@ -1,7 +1,6 @@
 package com.mahitotsu.arges.api;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,8 +26,8 @@ public class ConcurrencyTest extends TestBase {
     @Autowired
     private ValueRepository repository;
 
-    @RepeatedTest(name = RepeatedTest.LONG_DISPLAY_NAME, value = 5)
-    public void testIncrements_SingleThread() throws Exception {
+    @RepeatedTest(name = RepeatedTest.LONG_DISPLAY_NAME, value = 12)
+    public void testIncrements0_SingleThread() throws Exception {
 
         final UUID key = this.insertTask(0).call();
 
@@ -39,8 +38,8 @@ public class ConcurrencyTest extends TestBase {
         this.assertTask(key, 10);
     }
 
-    @RepeatedTest(name = RepeatedTest.LONG_DISPLAY_NAME, value = 5)
-    public void testIncrements_MultiThread() throws Exception {
+    @RepeatedTest(name = RepeatedTest.LONG_DISPLAY_NAME, value = 12)
+    public void testIncrements1_MultiThread() throws Exception {
 
         final UUID key = this.insertTask(0).call();
 
@@ -49,6 +48,18 @@ public class ConcurrencyTest extends TestBase {
         this.invokeTasks(tasks.size(), tasks);
 
         this.assertTask(key, 10);
+    }
+
+    @RepeatedTest(name = RepeatedTest.LONG_DISPLAY_NAME, value = 12)
+    public void testIncrements2_MultiThread() throws Exception {
+
+        final UUID key = this.insertTask(0).call();
+
+        final Collection<Callable<Integer>> tasks = IntStream.range(0, 10).mapToObj(i -> this.increment2Task(key))
+                .collect(Collectors.toList());
+        this.invokeTasks(tasks.size(), tasks);
+
+        this.assert2Task(key, 10);
     }
 
     private <R> Collection<R> invokeTasks(final int numOfThreads, final Collection<Callable<R>> tasks) {
@@ -83,6 +94,21 @@ public class ConcurrencyTest extends TestBase {
     private Callable<Boolean> assertTask(final UUID key, final int expectedValue) {
         return () -> {
             final Integer actualValue = this.repository.get(key);
+            assertEquals(expectedValue, actualValue);
+            return true;
+        };
+    }
+
+    private Callable<Integer> increment2Task(final UUID key) {
+        return () -> {
+            this.repository.increment2(key);
+            return 1;
+        };
+    }
+
+    private Callable<Boolean> assert2Task(final UUID key, final int expectedValue) {
+        return () -> {
+            final Integer actualValue = this.repository.get2(key);
             assertEquals(expectedValue, actualValue);
             return true;
         };

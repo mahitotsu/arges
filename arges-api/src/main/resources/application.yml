@@ -1,11 +1,6 @@
 spring:
   main:
     banner-mode: off
-  a:
-    datasource:
-      url: jdbc:postgresql://4iabtwnq2j55iez4j4bkykghgm.dsql.us-east-1.on.aws/postgres?ssl=required
-      username: admin
-  b:
-    datasource:
-      url: jdbc:postgresql://s4abtwnq2jebk7aj6vhlsb2coi.dsql.us-east-2.on.aws/postgres?ssl=required
-      username: admin
+  datasource:
+    url: jdbc:postgresql://4iabtwnq2j55iez4j4bkykghgm.dsql.us-east-1.on.aws/postgres?ssl=required
+    username: admin
