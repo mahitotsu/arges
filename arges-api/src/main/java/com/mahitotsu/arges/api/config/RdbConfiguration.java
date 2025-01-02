@@ -11,10 +11,10 @@ import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
-import org.postgresql.ds.PGSimpleDataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.AbstractDataSource;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -74,7 +74,7 @@ public class RdbConfiguration {
 
     private DataSource buildRegionalDataSource(final String endpoint, final String region) {
 
-        final PGSimpleDataSource ds = new PGSimpleDataSource();
+        final DriverManagerDataSource ds = new DriverManagerDataSource();
         ds.setUrl("jdbc:postgresql://" + endpoint + "/postgres?ssl=required");
 
         return ds;
