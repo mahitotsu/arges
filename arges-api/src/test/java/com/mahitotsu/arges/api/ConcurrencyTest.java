@@ -26,7 +26,7 @@ public class ConcurrencyTest extends TestBase {
     @Autowired
     private ValueRepository repository;
 
-    @RepeatedTest(name = RepeatedTest.LONG_DISPLAY_NAME, value = 1)
+    @RepeatedTest(name = RepeatedTest.LONG_DISPLAY_NAME, value = 5)
     public void testIncrements0_SingleThread() throws Exception {
 
         final UUID key = this.insertTask(0).call();
@@ -38,7 +38,7 @@ public class ConcurrencyTest extends TestBase {
         this.assertTask(key, 10);
     }
 
-    @RepeatedTest(name = RepeatedTest.LONG_DISPLAY_NAME, value = 1)
+    @RepeatedTest(name = RepeatedTest.LONG_DISPLAY_NAME, value = 5)
     public void testIncrements1_MultiThread() throws Exception {
 
         final UUID key = this.insertTask(0).call();
@@ -50,7 +50,7 @@ public class ConcurrencyTest extends TestBase {
         this.assertTask(key, 10);
     }
 
-    @RepeatedTest(name = RepeatedTest.LONG_DISPLAY_NAME, value = 1)
+    @RepeatedTest(name = RepeatedTest.LONG_DISPLAY_NAME, value = 5)
     public void testIncrements2_MultiThread() throws Exception {
 
         final UUID key = this.insertTask(0).call();
