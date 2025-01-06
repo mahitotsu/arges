@@ -101,7 +101,7 @@ public class AuroraDSQLDataSource extends AbstractDataSource {
             this.logger.debug("get a new connection from: " + region + ", connection=" + connection.toString());
             return connection;
         } catch (SQLException e) {
-            this.logger.warn("a sql exception occurred at: " + region + ", message=" + e.getMessage());
+            this.logger.debug("a sql exception occurred at: " + region + ", message=" + e.getMessage());
             throw e;
         }
     }
