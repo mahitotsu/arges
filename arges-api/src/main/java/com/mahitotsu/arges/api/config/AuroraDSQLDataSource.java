@@ -13,19 +13,22 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.datasource.AbstractDataSource;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 
-import lombok.Value;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dsql.DsqlUtilities;
 
 public class AuroraDSQLDataSource extends AbstractDataSource {
 
-    @Value
+    @Value("${mahitotsu.dsql.token.expirationSeconds}")
+    private int dsqlTokenExpirationSeconds;
+
+    @lombok.Value
     static class CacheEntry {
 
         CacheEntry(final String token, final long expiresAt) {
@@ -79,23 +82,28 @@ public class AuroraDSQLDataSource extends AbstractDataSource {
 
         final int index = this.counter.getAndUpdate(v -> v == Integer.MAX_VALUE ? 0 : v + 1);
         final String region = this.regions[index % this.regions.length];
-
         final String endpoint = regionalEndpoints.get(region);
-        final int expirationSeconds = 30;
-        final String token = this.tokenCache.compute(endpoint,
-                (k, v) -> v == null || v.isExpired(System.currentTimeMillis())
-                        ? new CacheEntry(this.generateAuthToken(endpoint, region, expirationSeconds),
-                                expirationSeconds * 900 + System.currentTimeMillis())
-                        : v)
-                .getToken();
 
-        final Connection connection = regionalDataSources.get(region).getConnection(username, token);
-        if (!connection.isValid(this.connectionTimeout)) {
-            throw new SQLException("The connection obtained from the DataSource is invalid.");
+        try {
+
+            final String token = this.tokenCache.compute(endpoint,
+                    (k, v) -> v == null || v.isExpired(System.currentTimeMillis())
+                            ? new CacheEntry(this.generateAuthToken(endpoint, region, this.dsqlTokenExpirationSeconds),
+                                    this.dsqlTokenExpirationSeconds * 900 + System.currentTimeMillis())
+                            : v)
+                    .getToken();
+
+            final Connection connection = regionalDataSources.get(region).getConnection(username, token);
+            if (!connection.isValid(this.connectionTimeout)) {
+                throw new SQLException("The connection obtained from the DataSource is invalid.");
+            }
+
+            this.logger.debug("get a new connection from: " + region + ", connection=" + connection.toString());
+            return connection;
+        } catch (SQLException e) {
+            this.logger.warn("a sql exception occurred at: " + region + ", message=" + e.getMessage());
+            throw e;
         }
-
-        this.logger.debug("get a new connection from: " + region);
-        return connection;
     }
 
     private String generateAuthToken(final String endpoint, final String region, final int expirationSeconds) {

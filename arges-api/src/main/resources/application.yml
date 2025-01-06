@@ -5,3 +5,17 @@ spring:
 logging:
   level:
     '[com.mahitotsu.arges.api.config]':  debug
+    '[com.zaxxer.hikari]':  debug
+
+mahitotsu:
+  dsql:
+    endpoints:
+      - 4iabtwnq2j55iez4j4bkykghgm.dsql.us-east-1.om.aws
+      - s4abtwnq2jebk7aj6vhlsb2coi.dsql.us-east-2.on.aws
+    connection:
+      properties:
+        sslmode: require
+        loginTimeout: 5
+        connectionTimeout: 2
+    token:
+      expirationSeconds: 30
