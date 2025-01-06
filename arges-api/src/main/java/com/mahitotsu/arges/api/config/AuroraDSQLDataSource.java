@@ -85,13 +85,12 @@ public class AuroraDSQLDataSource extends AbstractDataSource {
         final String endpoint = regionalEndpoints.get(region);
 
         try {
-
             final String token = this.tokenCache.compute(endpoint,
                     (k, v) -> v == null || v.isExpired(System.currentTimeMillis())
-                            ? new CacheEntry(this.generateAuthToken(endpoint, region, this.dsqlTokenExpirationSeconds),
+                            ? new CacheEntry(
+                                    this.generateAuthToken(endpoint, region, this.dsqlTokenExpirationSeconds),
                                     this.dsqlTokenExpirationSeconds * 900 + System.currentTimeMillis())
-                            : v)
-                    .getToken();
+                            : v).getToken();
 
             final Connection connection = regionalDataSources.get(region).getConnection(username, token);
             if (!connection.isValid(this.connectionTimeout)) {
