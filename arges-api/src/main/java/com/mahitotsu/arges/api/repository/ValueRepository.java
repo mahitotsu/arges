@@ -52,7 +52,7 @@ public class ValueRepository {
         return sqlClient.queryForObject("SELECT value FROM v_table WHERE id = ?", Integer.class, key);
     }
 
-    @Retryable(retryFor = CannotAcquireLockException.class, maxAttempts = 16, backoff = @Backoff(delay = 10, multiplier = 1.2, random = true))
+    @Retryable(retryFor = CannotAcquireLockException.class, maxAttempts = 32, backoff = @Backoff(delay = 10, multiplier = 1.2, random = true))
     @Transactional
     public Integer increment(final UUID key) {
 
@@ -69,7 +69,7 @@ public class ValueRepository {
         return nextValue;
     }
 
-    @Retryable(retryFor = CannotAcquireLockException.class, maxAttempts = 16, backoff = @Backoff(delay = 10, multiplier = 1.2, random = true))
+    @Retryable(retryFor = CannotAcquireLockException.class, maxAttempts = 32, backoff = @Backoff(delay = 10, multiplier = 1.2, random = true))
     @Transactional
     public void increment2(final UUID key) {
 
