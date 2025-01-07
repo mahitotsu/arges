@@ -1,13 +1,17 @@
 package com.mahitotsu.arges.api.repository;
 
-import java.util.Random;
+import java.sql.PreparedStatement;
 import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Repository;
@@ -16,19 +20,28 @@ import org.springframework.transaction.annotation.Transactional;
 @Repository
 public class ValueRepository {
 
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
     @Autowired
     private DataSource dataSource;
-
-    private Random random = new Random();
 
     @Transactional
     public UUID insert(final int initialValue) {
 
+        final KeyHolder keyHolder = new GeneratedKeyHolder();
         final JdbcTemplate sqlClient = new JdbcTemplate(this.dataSource);
-        final UUID key = new UUID(System.nanoTime(), this.random.nextLong());
 
-        sqlClient.update("INSERT INTO v_table (id, value) VALUES (?,?)", key, initialValue);
-        return key;
+        sqlClient.update(con -> {
+            final PreparedStatement ps = con.prepareStatement("INSERT INTO v_table (value) VALUES (?)",
+                    new String[] { "id" });
+            ps.setInt(1, initialValue);
+            return ps;
+        }, keyHolder);
+
+        final UUID generatedKey = keyHolder.getKeyAs(UUID.class);
+        this.logger.debug("A new key is generated: {}", generatedKey);
+
+        return generatedKey;
     }
 
     @Transactional(readOnly = true)

@@ -4,8 +4,9 @@ spring:
 
 logging:
   level:
-    '[com.mahitotsu.arges.api.config]':  debug
-    '[com.zaxxer.hikari]':  debug
+    '[com.mahitotsu.arges.api.config]':  info
+    '[com.mahitotsu.arges.api.repository]':  debug
+    '[com.zaxxer.hikari]':  info
 
 mahitotsu:
   dsql:
