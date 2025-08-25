@@ -1,0 +1,238 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "arges"
+version = "0.1.0"
+description = "Text Clustering & Classification with Bedrock"
+authors = [
+    {name = "Your Name", email = "your.email@example.com"},
+]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+keywords = [
+    "aws",
+    "bedrock",
+    "llm",
+    "text-analysis",
+    "clustering",
+    "natural-language-processing",
+    "machine-learning",
+    "text-classification",
+    "visualization"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Linguistic",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    # AWS SDK for Bedrock integration
+    "boto3>=1.26.0",
+    "botocore>=1.29.0",
+
+    # AWS Strands Agents for workflow automation
+    "strands-agents>=0.2.0",
+    "strands-agents-tools>=0.2.0",
+
+    # Data processing and analysis
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+
+    # Machine learning and clustering
+    "scikit-learn>=1.3.0",
+
+    # Visualization
+    "plotly>=5.14.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+    "wordcloud>=1.9.0",
+
+    # CLI and utilities
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0",
+
+    # File handling
+    "openpyxl>=3.1.0",  # Excel file support
+]
+
+[project.urls]
+Homepage = "https://github.com/mahitotsu/arges"
+Repository = "https://github.com/mahitotsu/arges"
+Documentation = "https://mahitotsu.github.io/arges"
+Issues = "https://github.com/mahitotsu/arges/issues"
+
+[project.optional-dependencies]
+dev = [
+    # Testing
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+
+    # Code formatting and linting
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+
+    # Pre-commit hooks
+    "pre-commit>=3.0.0",
+
+    # Security and dependency management
+    "bandit>=1.7.0",
+    "safety>=2.3.0",
+
+    # Version management
+    "bumpversion>=0.6.0",
+
+    # Type stubs for AWS
+    "boto3-stubs[bedrock]>=1.26.0",
+    "types-requests>=2.31.0",
+]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.0.0",
+]
+
+[project.scripts]
+arges = "arges.cli:main"
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "D",   # pydocstyle
+    "S",   # flake8-bandit (security)
+    "N",   # pep8-naming
+]
+ignore = [
+    "D100", # Missing docstring in public module
+    "D101", # Missing docstring in public class
+    "D102", # Missing docstring in public method
+    "D103", # Missing docstring in public function
+    "D104", # Missing docstring in public package
+    "D105", # Missing docstring in magic method
+    "S101", # Use of assert detected (common in tests)
+    "S301", # Pickle usage (may be needed for ML models)
+]
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.isort]
+known-first-party = ["arges"]
+known-third-party = [
+    "boto3",
+    "botocore",
+    "strands_agents",
+    "strands_agents_tools",
+    "pandas",
+    "numpy",
+    "scipy",
+    "sklearn",
+    "plotly",
+    "matplotlib",
+    "seaborn",
+    "wordcloud",
+]
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder"
+]
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--cov=src",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--strict-markers",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests", "build", "dist"]
+skips = [
+    "B101",  # assert_used - common in tests
+    "B301",  # pickle - may be needed for ML models
+    "B403",  # import_pickle - controlled usage
+]
+
+[tool.bandit.assert_used]
+skips = ["**/test_*.py", "**/*_test.py"]

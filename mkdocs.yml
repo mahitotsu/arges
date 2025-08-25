@@ -1,0 +1,65 @@
+site_name: Arges
+site_description: "Text clustering and classification with AWS Bedrock"
+site_author: mahitotsu
+site_url: https://mahitotsu.github.io/arges
+
+repo_name: mahitotsu/arges
+repo_url: https://github.com/mahitotsu/arges
+
+theme:
+  name: material
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+nav:
+  - ホーム: index.md
+  - 開発ガイド: development.md
+  - コントリビューション: contributing.md
+  # TODO: 必要に応じて以下のページを作成してください
+  # - インストール: installation.md
+  # - 設定: configuration.md
+  # - 使用方法: usage.md
+  # - API リファレンス: api-reference.md
+  # - サンプル: examples.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google

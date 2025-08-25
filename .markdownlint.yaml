@@ -1,0 +1,93 @@
+# Markdownlint configuration
+# See: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+
+# Default state for all rules
+default: true
+
+# Rule configurations
+MD003:
+  # Header style
+  style: "atx"
+
+MD007:
+  # Unordered list indentation
+  indent: 2
+
+MD009:
+  # Trailing spaces
+  br_spaces: 2
+  list_item_empty_lines: false
+  strict: false
+
+MD012:
+  # Multiple consecutive blank lines
+  maximum: 2
+
+MD013:
+  # Line length
+  line_length: 88
+  heading_line_length: 88
+  code_block_line_length: 88
+  code_blocks: true
+  tables: true
+  headings: true
+  strict: false
+  stern: false
+
+MD022:
+  # Headers should be surrounded by blank lines
+  lines_above: 1
+  lines_below: 1
+
+MD024:
+  # Multiple headers with the same content
+  allow_different_nesting: true
+
+MD025:
+  # Multiple top level headers in the same document
+  front_matter_title: "^\\s*title\\s*[:=]"
+
+MD026:
+  # Trailing punctuation in header
+  punctuation: ".,;:!。，；：！"
+
+MD029:
+  # Ordered list item prefix
+  style: "ordered"
+
+MD033:
+  # Inline HTML
+  allowed_elements: ["br", "sub", "sup", "details", "summary"]
+
+MD034:
+  # Bare URL used
+  false
+
+MD036:
+  # Emphasis used instead of a header
+  punctuation: ".,;:!?。，；：！？"
+
+MD040:
+  # Fenced code blocks should have a language specified
+  allowed_languages: []
+  language_only: false
+
+MD041:
+  # First line in file should be a top level header
+  front_matter_title: "^\\s*title\\s*[:=]"
+
+MD046:
+  # Code block style
+  style: "fenced"
+
+MD048:
+  # Code fence style
+  style: "backtick"
+
+MD049:
+  # Emphasis style
+  style: "asterisk"
+
+MD050:
+  # Strong style
+  style: "asterisk"
