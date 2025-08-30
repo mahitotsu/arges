@@ -1,20 +1,35 @@
-from argparse import ArgumentParser
-from strands import Agent
-from strands.models import BedrockModel
+import boto3
+import json 
+import pandas as pd
+import numpy as np
+from pathlib import Path
+from sklearn.cluster import DBSCAN
 
-model = BedrockModel(
-    model_id="apac.amazon.nova-micro-v1:0",
+bedrock_client = boto3.client(
+    service_name="bedrock-runtime", 
     region_name="ap-northeast-1"
+) 
+
+def get_embedding(text: str) -> list[float]:
+    response = bedrock_client.invoke_model(
+        modelId="amazon.titan-embed-text-v2:0",
+        body=json.dumps({"inputText": text}),
+        accept="application/json",
+        contentType="application/json",
     )
+    response_body = json.loads(response.get("body").read().decode())
+    return response_body.get('embedding')
 
 def main():
-    parser = ArgumentParser()
-    parser.add_argument("message")
-    args = parser.parse_args()
+    filepath = Path('./data/simple.csv').resolve()
+    df = pd.read_csv(filepath)
+    df['embedding'] = df['description'].apply(get_embedding)
 
-    message = args.message
-    agent = Agent(model=model)
-    agent(message)
+    vectors = np.array(df['embedding'].to_list())
+    print(vectors)
+    model = DBSCAN(eps=0.5, min_samples=2)
+    labels = model.fit_predict(vectors)
+    print(labels)
 
 if __name__ == "__main__":
     main()
