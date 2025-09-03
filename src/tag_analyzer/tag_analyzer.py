@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import io
 import os
+import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import List, Optional
 
 import matplotlib
 import pandas as pd
@@ -13,6 +13,10 @@ import pandas as pd
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import seaborn as sns  # noqa: E402
+
+
+# Library code should not configure logging; users/CLI can configure handlers.
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -146,16 +150,10 @@ def _ensure_japanese_font() -> None:
     else:
         # Keep going with DejaVu (figures will warn). Provide at least proper minus rendering.
         rcParams["axes.unicode_minus"] = False
-        # One-time concise hint for users running via CLI
-        try:
-            import sys
-
-            print(
-                "[tag_analyzer] Japanese font not found. Set ARGES_JP_FONT to a JP font name or path, or install fonts-noto-cjk.",
-                file=sys.stderr,
-            )
-        except Exception:
-            pass
+        # Emit a concise hint via logger (CLI may surface it as stderr depending on handler)
+        logger.warning(
+            "Japanese font not found. Set ARGES_JP_FONT to a JP font name or path, or install fonts-noto-cjk."
+        )
 
 
 def _melt_tag_columns(df: pd.DataFrame) -> pd.DataFrame:

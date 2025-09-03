@@ -39,57 +39,27 @@
 
 ```text
 ┌─────────────────────┐
-│ data/DevOps-QAs.csv │ (入力データ)
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│   tag_extractor     │ (AI: 埋め込み+クラスタリング)
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│data/devops_tags.json│ (候補語リスト)
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│   AIエージェント     │ (AI: 分類体系設計)
-│  タグ体系設計       │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│   data/tags.json    │ (タグ定義)
-└──────────┬──────────┘
-           │         ┌─────────────────────┐
-           │         │ data/DevOps-QAs.csv │ (元データ再利用)
-           │         └──────────┬──────────┘
-           │                    │
-           └────────────────────┼──────┐
-                                │      │
-                                ▼      ▼
-                        ┌─────────────────────┐
-                        │   tag_assigner      │ (AI: セマンティック検索)
-                        └──────────┬──────────┘
-                                   │
-                                   ▼
-                        ┌─────────────────────┐
-                        │data/tagged_devops.csv│ (タグ付きデータ)
-                        └──────────┬──────────┘
-                                   │
-                                   ▼
-                        ┌─────────────────────┐
-                        │   tag_analyzer      │ (統計処理+可視化)
-                        └──────────┬──────────┘
-                                   │
-                     ┌─────────────┴─────────────┐
-                     │                           │
-                     ▼                           ▼
-          ┌─────────────────────┐    ┌─────────────────────┐
-          │devops_tag_report.md │    │ reports/figs/*.png  │
-          │      (レポート)       │    │    (グラフ画像)     │
-          └─────────────────────┘    └─────────────────────┘
+│ data/DevOps-QAs.csv] --> B[tag_extractor]
+    B --> C[data/devops_tags.json]
+    C --> D[AIエージェント<br/>タグ体系設計]
+    D --> E[data/tags.json]
+    E --> F[tag_assigner]
+    A --> F
+    F --> G[data/tagged_devops.csv]
+    G --> H[tag_analyzer]
+    H --> I[reports/devops_tag_report.md]
+    H --> J[reports/figs/*.png]
+    
+    %% スタイル定義
+    classDef inputFile fill:#e1f5fe
+    classDef outputFile fill:#f3e5f5
+    classDef process fill:#e8f5e8
+    classDef aiProcess fill:#fff3e0
+    
+    class A,C,E,G inputFile
+    class I,J outputFile
+    class B,F,H process
+    class D aiProcess
 ```
 
 ## 技術詳細（開発者・研究者向け）
