@@ -1,9 +1,0 @@
-README.md
-pyproject.toml
-src/arges.egg-info/PKG-INFO
-src/arges.egg-info/SOURCES.txt
-src/arges.egg-info/dependency_links.txt
-src/arges.egg-info/requires.txt
-src/arges.egg-info/top_level.txt
-src/semcluster/__init__.py
-src/semcluster/__main__.py
