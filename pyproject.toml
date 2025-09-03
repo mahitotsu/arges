@@ -31,6 +31,7 @@ analysis = [
 [project.scripts]
 tag-extract = "tag_extractor.__main__:main"
 tag-assign = "tag_assigner.__main__:main"
+tag-analyze = "tag_analyzer.__main__:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/tag_extractor", "src/tag_assigner"]
+packages = ["src/tag_extractor", "src/tag_assigner", "src/tag_analyzer"]

@@ -26,10 +26,11 @@ def main(argv: List[str] | None = None) -> int:
         ],
         help="CSV file paths to process",
     )
+    # Align option name/format with tag_assigner
     parser.add_argument(
-        "--summary-col", "-col",
+        "--column", "-col",
         default="要約",
-        help="Summary column name in CSV",
+        help="Target column name to extract from CSV (same as tag_assigner)",
     )
     parser.add_argument("--min-support", "-m", type=int, default=2, help="Minimum frequency to include a token")
     parser.add_argument("--max-axes", "-x", type=int, default=10, help="Maximum number of semantic axes (clusters)")
@@ -61,7 +62,7 @@ def main(argv: List[str] | None = None) -> int:
 
     files = [Path(p) for p in args.files]
     extractor = TagExtractor(
-        summary_column=args.summary_col,
+        summary_column=args.column,
         min_support=args.min_support,
         max_axes=args.max_axes,
         top_k_per_axis=args.top_k,
